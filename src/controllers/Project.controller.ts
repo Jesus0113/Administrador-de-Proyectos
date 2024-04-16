@@ -8,6 +8,8 @@ export class ProjectController {
 
         const project = new Project(req.body);
 
+        project.manager = req.user.id
+
         try {
             await project.save();
             res.send('Proyecto creado correctamente')
@@ -19,7 +21,11 @@ export class ProjectController {
     static getAllProjects = async (req:Request, res: Response) => {
 
         try {
-            const projects = await Project.find({});
+            const projects = await Project.find({
+                $or: [
+                    {manager: {$in: req.user.id}}
+                ]
+            });
             res.json(projects)
         } catch (error) {
             console.log(error);
@@ -35,6 +41,11 @@ export class ProjectController {
 
             if(!project) {
                 const error = new Error('Proyecto no encontrado');
+                return res.status(404).json({error: error.message})
+            }
+
+            if(project.manager.toString() !== req.user.id.toString() ) {
+                const error = new Error('Accion no valida');
                 return res.status(404).json({error: error.message})
             }
 
@@ -55,6 +66,11 @@ export class ProjectController {
 
             if(!project) {
                 const error = new Error('Proyecto no encontrado');
+                return res.status(404).json({error: error.message})
+            }
+
+            if(project.manager.toString() !== req.user.id.toString() ) {
+                const error = new Error('Solo el manager puede actualizar un proyecto');
                 return res.status(404).json({error: error.message})
             }
 
@@ -81,6 +97,11 @@ export class ProjectController {
             
             if(!project) {
                 const error = new Error('Proyecto no encontrado');
+                return res.status(404).json({error: error.message})
+            }
+
+            if(project.manager.toString() !== req.user.id.toString() ) {
+                const error = new Error('Solo el manager puede eliminar un proyecto');
                 return res.status(404).json({error: error.message})
             }
             res.send('Proyecto eliminado')
